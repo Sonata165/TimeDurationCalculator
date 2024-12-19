@@ -36,7 +36,7 @@ class TimeDurationCalculator(QWidget):
         # self.target_datetime_label = QLabel('Quit Time (YY/MM/DD HH:MM):', self)
         # self.target_datetime_input = QLineEdit(self)
         # self.calculate_target_button = QPushButton('Calculate Current to Quit Duration', self)
-        self.quit_dur_label = QLabel('Current to Quit Duration: ', self)
+        # self.quit_dur_label = QLabel('Current to Quit Duration: ', self)
 
         # Set quit date
         quit_time = '24/12/01 12:00'
@@ -64,12 +64,6 @@ class TimeDurationCalculator(QWidget):
         layout.addWidget(self.calculate_date_button)
         layout.addWidget(self.result_date_label)
 
-        # Add spacing between date and target datetime sections
-        layout.addSpacing(20)  # Adds 20 pixels of space
-
-        # Current to target datetime widgets
-        layout.addWidget(self.quit_dur_label)
-
         self.setLayout(layout)
 
         # Connect events for time
@@ -88,8 +82,8 @@ class TimeDurationCalculator(QWidget):
         self.start_date_input.textChanged.connect(self.auto_add_slash)
         self.end_date_input.textChanged.connect(self.auto_add_slash)
 
-        # Calculate the initial duration for the target datetime
-        self.calculate_target_duration()
+        # # Calculate the initial duration for the target datetime
+        # self.calculate_target_duration()
 
         # Window properties
         self.setWindowTitle('Duration Calculator')
@@ -152,27 +146,27 @@ class TimeDurationCalculator(QWidget):
         except ValueError:
             self.result_date_label.setText('Error: Please enter the date in YY/MM/DD format.')
 
-    def calculate_target_duration(self):
-        target_datetime_str = self.quit_time
+    # def calculate_target_duration(self):
+    #     target_datetime_str = self.quit_time
 
-        try:
-            # Parse the input target datetime
-            target_datetime = datetime.strptime(target_datetime_str, '%y/%m/%d %H:%M')
-            current_datetime = datetime.now()
+    #     try:
+    #         # Parse the input target datetime
+    #         target_datetime = datetime.strptime(target_datetime_str, '%y/%m/%d %H:%M')
+    #         current_datetime = datetime.now()
 
-            # Calculate the duration from current time to target time
-            duration =  current_datetime - target_datetime
+    #         # Calculate the duration from current time to target time
+    #         duration =  current_datetime - target_datetime
 
-            total_seconds = duration.total_seconds()
-            duration_days = total_seconds / 86400
-            duration_hours = total_seconds / 3600
+    #         total_seconds = duration.total_seconds()
+    #         duration_days = total_seconds / 86400
+    #         duration_hours = total_seconds / 3600
 
-            # Display the result
-            self.quit_dur_label.setText(
-                f'Current to Quit Duration: {duration_days:.2f} days ({duration_hours:.2f} hours)'
-            )
-        except ValueError:
-            self.quit_dur_label.setText('Error: Please enter the date in YY/MM/DD HH:MM format.')
+    #         # Display the result
+    #         self.quit_dur_label.setText(
+    #             f'Current to Quit Duration: {duration_days:.2f} days ({duration_hours:.2f} hours)'
+    #         )
+    #     except ValueError:
+    #         self.quit_dur_label.setText('Error: Please enter the date in YY/MM/DD HH:MM format.')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

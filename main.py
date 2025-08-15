@@ -18,6 +18,8 @@ class TimeDurationCalculator(QWidget):
 
         # Set default start time to current time in HH:MM format
         self.start_input.setText(datetime.now().strftime('%H:%M'))
+        # Set default end time to 17:45
+        self.end_input.setText('17:45')
 
         # Create widgets for date
         self.start_date_label = QLabel('Start Date (YY/MM/DD):', self)
@@ -50,11 +52,41 @@ class TimeDurationCalculator(QWidget):
         layout.addWidget(self.start_input)
         layout.addWidget(self.end_label)
         layout.addWidget(self.end_input)
+        # Move break time input here
+        self.pomo_break_label = QLabel('Break Time (HH:MM):', self)
+        self.pomo_break_input = QLineEdit(self)
+        self.pomo_break_input.setText('1:00')
+        layout.addWidget(self.pomo_break_label)
+        layout.addWidget(self.pomo_break_input)
         layout.addWidget(self.calculate_button)
         layout.addWidget(self.result_label)
 
-        # Add spacing between time and date sections
-        layout.addSpacing(20)  # Adds 20 pixels of space
+        # Pomodoro widgets (remove break input from here)
+        self.pomo_gtd_label = QLabel('Pomos for GTD (p):', self)
+        self.pomo_gtd_input = QLineEdit(self)
+        self.pomo_gtd_input.setText('1')
+        self.pomo_eff_label = QLabel('Efficiency Ratio:', self)
+        self.pomo_eff_input = QLineEdit(self)
+        self.pomo_eff_input.setText('0.85')
+        self.pomo_main_label = QLabel('Main Ratio:', self)
+        self.pomo_main_input = QLineEdit(self)
+        self.pomo_main_input.setText('0.65')
+        self.pomo_calc_button = QPushButton('Calculate Pomodoros', self)
+        self.pomo_result_label = QLabel('Pomodoro Calculation: ', self)
+
+        layout.addSpacing(10)
+        layout.addWidget(self.pomo_gtd_label)
+        layout.addWidget(self.pomo_gtd_input)
+        layout.addWidget(self.pomo_eff_label)
+        layout.addWidget(self.pomo_eff_input)
+        layout.addWidget(self.pomo_main_label)
+        layout.addWidget(self.pomo_main_input)
+        layout.addWidget(self.pomo_calc_button)
+        layout.addWidget(self.pomo_result_label)
+        layout.addSpacing(20)
+
+        # Connect pomodoro calculation button
+        self.pomo_calc_button.clicked.connect(self.calculate_pomodoro)
 
         # Date widgets
         layout.addWidget(self.start_date_label)
@@ -89,6 +121,10 @@ class TimeDurationCalculator(QWidget):
         self.setWindowTitle('Duration Calculator')
         self.setGeometry(100, 100, 400, 400)
 
+        # Automatically calculate duration and pomodoro on startup
+        self.calculate_duration()
+        self.calculate_pomodoro()
+
     def auto_add_colon(self, text):
         if len(text) == 2 and ':' not in text:
             self.sender().setText(text + ':')
@@ -101,25 +137,27 @@ class TimeDurationCalculator(QWidget):
     def calculate_duration(self):
         start_time_str = self.start_input.text()
         end_time_str = self.end_input.text()
-
+        break_time_str = self.pomo_break_input.text()
         try:
             # Parse the input times
             start_time = datetime.strptime(start_time_str, '%H:%M')
             end_time = datetime.strptime(end_time_str, '%H:%M')
-
-            # Handle overnight durations
             if end_time < start_time:
                 end_time = end_time.replace(day=start_time.day + 1)
-
-            # Calculate the duration
             duration = end_time - start_time
             duration_minutes = int(duration.total_seconds() / 60)
             duration_hours = duration_minutes // 60
             remaining_minutes = duration_minutes % 60
-
-            # Display the result
+            # Deduct break time
+            break_time = datetime.strptime(break_time_str, '%H:%M')
+            break_minutes = break_time.hour * 60 + break_time.minute
+            duration_minutes_deducted = duration_minutes - break_minutes
+            duration_hours_deducted = duration_minutes_deducted // 60
+            remaining_minutes_deducted = duration_minutes_deducted % 60
+            # Display both total and deducted durations
             self.result_label.setText(
-                f'Duration: {duration_hours:02}:{remaining_minutes:02} ({duration_minutes} minutes)'
+                f"Total Duration: {duration_hours:02}:{remaining_minutes:02} ({duration_minutes} min)\n"
+                f"Deducted Break: {duration_hours_deducted:02}:{remaining_minutes_deducted:02} ({duration_minutes_deducted} min)"
             )
         except ValueError:
             self.result_label.setText('Error: Please enter the time in HH:MM format.')
@@ -146,27 +184,79 @@ class TimeDurationCalculator(QWidget):
         except ValueError:
             self.result_date_label.setText('Error: Please enter the date in YY/MM/DD format.')
 
-    # def calculate_target_duration(self):
-    #     target_datetime_str = self.quit_time
+    def calculate_pomodoro(self):
+        # Get start and end time for the day
+        start_time_str = self.start_input.text()
+        end_time_str = self.end_input.text()
+        break_time_str = self.pomo_break_input.text()
+        gtd_pomo_str = self.pomo_gtd_input.text()
+        try:
+            start_time = datetime.strptime(start_time_str, '%H:%M')
+            end_time = datetime.strptime(end_time_str, '%H:%M')
+            if end_time < start_time:
+                end_time = end_time.replace(day=start_time.day + 1)
+            total_minutes = int((end_time - start_time).total_seconds() / 60)
 
-    #     try:
-    #         # Parse the input target datetime
-    #         target_datetime = datetime.strptime(target_datetime_str, '%y/%m/%d %H:%M')
-    #         current_datetime = datetime.now()
+            # Deduct break time
+            break_time = datetime.strptime(break_time_str, '%H:%M')
+            break_minutes = break_time.hour * 60 + break_time.minute
+            work_minutes = total_minutes - break_minutes
+            # Efficiency ratio
+            try:
+                eff_ratio = float(self.pomo_eff_input.text())
+            except ValueError:
+                eff_ratio = 0.85
+            eff_minutes = int(work_minutes * eff_ratio)
 
-    #         # Calculate the duration from current time to target time
-    #         duration =  current_datetime - target_datetime
+            # Pomodoros (total should include GTD pomos)
+            pomo_count = eff_minutes // 30
 
-    #         total_seconds = duration.total_seconds()
-    #         duration_days = total_seconds / 86400
-    #         duration_hours = total_seconds / 3600
+            # Deduct GTD pomos (1 pomo = 30 min)
+            try:
+                gtd_pomo = int(gtd_pomo_str)
+            except ValueError:
+                gtd_pomo = 1
+            gtd_minutes = gtd_pomo * 30
+            eff_minutes_after_gtd = eff_minutes - gtd_minutes
+            if eff_minutes_after_gtd < 0:
+                eff_minutes_after_gtd = 0
 
-    #         # Display the result
-    #         self.quit_dur_label.setText(
-    #             f'Current to Quit Duration: {duration_days:.2f} days ({duration_hours:.2f} hours)'
-    #         )
-    #     except ValueError:
-    #         self.quit_dur_label.setText('Error: Please enter the date in YY/MM/DD HH:MM format.')
+            # Main ratio
+            try:
+                main_ratio = float(self.pomo_main_input.text())
+            except ValueError:
+                main_ratio = 0.65
+            main_minutes = int(eff_minutes_after_gtd * main_ratio)
+            main_pomo = main_minutes // 30
+            remain_pomo = pomo_count - gtd_pomo - main_pomo
+            self.pomo_result_label.setText(
+                "Pomodoro Calculation:\n"
+                f"    Efficient Time:  \t{eff_minutes} min\n"
+                f"    Total #Pomo:     \t{pomo_count}p\n"
+                f"     - GTD pomos:    \t{gtd_pomo:>2}p\n"
+                f"     - Main Project: \t{main_pomo:>2}p\n"
+                f"     - Remaining:    \t{remain_pomo:>2}p\n"
+            )
+            # labels = ["GTD pomos", "Main Project", "Remaining"]
+            # values = [gtd_pomo, main_pomo, remain_pomo]
+
+            # label_width = max(len(lbl) for lbl in labels)
+            # value_width = max(len(str(v)) + 1 for v in values)  # +1 给 'p'
+
+            # lines = [
+            #     f"     - {label:<{label_width}} : {f'{value}p':>{value_width}}"
+            #     for label, value in zip(labels, values)
+            # ]
+
+            # self.pomo_result_label.setText(
+            #     "Pomodoro Calculation:\n"
+            #     f"    Efficient Time: \t{eff_minutes} min\n"
+            #     f"    Total #Pomo: \t{pomo_count}p\n"
+            #     + "\n".join(lines)
+            # )
+        except Exception:
+            self.pomo_result_label.setText('Error: Please check your time and input formats.')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

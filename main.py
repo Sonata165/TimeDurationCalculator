@@ -19,7 +19,7 @@ class TimeDurationCalculator(QWidget):
         # Set default start time to current time in HH:MM format
         self.start_input.setText(datetime.now().strftime('%H:%M'))
         # Set default end time to 17:45
-        self.end_input.setText('17:45')
+        self.end_input.setText('19:30')
 
         # Create widgets for date
         self.start_date_label = QLabel('Start Date (YY/MM/DD):', self)
@@ -55,7 +55,7 @@ class TimeDurationCalculator(QWidget):
         # Move break time input here
         self.pomo_break_label = QLabel('Break Time (HH:MM):', self)
         self.pomo_break_input = QLineEdit(self)
-        self.pomo_break_input.setText('1:00')
+        self.pomo_break_input.setText('2:00')
         layout.addWidget(self.pomo_break_label)
         layout.addWidget(self.pomo_break_input)
         layout.addWidget(self.calculate_button)

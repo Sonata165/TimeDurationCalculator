@@ -19,7 +19,7 @@ class TimeDurationCalculator(QWidget):
         # Set default start time to current time in HH:MM format
         self.start_input.setText(datetime.now().strftime('%H:%M'))
         # Set default end time to 17:45
-        self.end_input.setText('19:30')
+        self.end_input.setText('19:00')
 
         # Create widgets for date
         self.start_date_label = QLabel('Start Date (YY/MM/DD):', self)

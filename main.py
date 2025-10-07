@@ -1,11 +1,32 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
 from datetime import datetime, timedelta
+import json
+import os
 
 class TimeDurationCalculator(QWidget):
+    CONFIG_FILE = os.path.expanduser('~/.duration_calc_config.json')
+
     def __init__(self):
         super().__init__()
+        self.load_config()
         self.init_ui()
+
+    def load_config(self):
+        self.config = {}
+        try:
+            if os.path.exists(self.CONFIG_FILE):
+                with open(self.CONFIG_FILE, 'r') as f:
+                    self.config = json.load(f)
+        except Exception:
+            self.config = {}
+
+    def save_config(self):
+        try:
+            with open(self.CONFIG_FILE, 'w') as f:
+                json.dump(self.config, f)
+        except Exception:
+            pass
 
     def init_ui(self):
         # Create widgets for time
@@ -18,8 +39,8 @@ class TimeDurationCalculator(QWidget):
 
         # Set default start time to current time in HH:MM format
         self.start_input.setText(datetime.now().strftime('%H:%M'))
-        # Set default end time to 17:45
-        self.end_input.setText('19:00')
+        # Set default end time
+        self.end_input.setText(self.config.get('end_time', '19:00'))
 
         # Create widgets for date
         self.start_date_label = QLabel('Start Date (YY/MM/DD):', self)
@@ -55,7 +76,7 @@ class TimeDurationCalculator(QWidget):
         # Move break time input here
         self.pomo_break_label = QLabel('Break Time (HH:MM):', self)
         self.pomo_break_input = QLineEdit(self)
-        self.pomo_break_input.setText('2:00')
+        self.pomo_break_input.setText(self.config.get('break_time', '2:00'))
         layout.addWidget(self.pomo_break_label)
         layout.addWidget(self.pomo_break_input)
         layout.addWidget(self.calculate_button)
@@ -64,13 +85,13 @@ class TimeDurationCalculator(QWidget):
         # Pomodoro widgets (remove break input from here)
         self.pomo_gtd_label = QLabel('Pomos for GTD (p):', self)
         self.pomo_gtd_input = QLineEdit(self)
-        self.pomo_gtd_input.setText('1')
+        self.pomo_gtd_input.setText(self.config.get('gtd_pomo', '1'))
         self.pomo_eff_label = QLabel('Efficiency Ratio:', self)
         self.pomo_eff_input = QLineEdit(self)
-        self.pomo_eff_input.setText('0.85')
+        self.pomo_eff_input.setText(self.config.get('eff_ratio', '0.85'))
         self.pomo_main_label = QLabel('Main Ratio:', self)
         self.pomo_main_input = QLineEdit(self)
-        self.pomo_main_input.setText('0.65')
+        self.pomo_main_input.setText(self.config.get('main_ratio', '0.65'))
         self.pomo_calc_button = QPushButton('Calculate Pomodoros', self)
         self.pomo_result_label = QLabel('Pomodoro Calculation: ', self)
 
@@ -138,6 +159,10 @@ class TimeDurationCalculator(QWidget):
         start_time_str = self.start_input.text()
         end_time_str = self.end_input.text()
         break_time_str = self.pomo_break_input.text()
+        # Save end time and break time to config
+        self.config['end_time'] = end_time_str
+        self.config['break_time'] = break_time_str
+        self.save_config()
         try:
             # Parse the input times
             start_time = datetime.strptime(start_time_str, '%H:%M')
@@ -190,6 +215,13 @@ class TimeDurationCalculator(QWidget):
         end_time_str = self.end_input.text()
         break_time_str = self.pomo_break_input.text()
         gtd_pomo_str = self.pomo_gtd_input.text()
+        eff_ratio_str = self.pomo_eff_input.text()
+        main_ratio_str = self.pomo_main_input.text()
+        # Save GTD, efficiency, and main ratio to config
+        self.config['gtd_pomo'] = gtd_pomo_str
+        self.config['eff_ratio'] = eff_ratio_str
+        self.config['main_ratio'] = main_ratio_str
+        self.save_config()
         try:
             start_time = datetime.strptime(start_time_str, '%H:%M')
             end_time = datetime.strptime(end_time_str, '%H:%M')
